@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<meta charset="utf-8" lang="en">
+	<link href="https://fonts.googleapis.com/css?family=Playfair+Display|Roboto" rel="stylesheet">
+	<title>Peter D'Amato</title>
+<body>
+<style>
+	body,html{
+		margin: 0;
+		padding: 0;
+		font-family: 'Playfair Display', serif;
+		font-size: 0.95em;
+		text-align: center;
+	}
+	#chart{
+		background-color: #F5F2EB;
+		border: 1px solid #CCC;
+	}
+	.job1{
+		font-size: 150%;
+	}
+	.job2{
+		font-size: 125%;
+	}
+	.job3{
+		font-size: 125%;
+	}
+	.legend-label{
+		color:white;
+	}
+	.bar{
+		fill: #533875;
+		shape-rendering: crispEdges;
+
+	}
+	.bar-label{
+		fill: black;
+		text-anchor: middle;
+		font-size: 18px;
+	}
+	.axis path,
+	.axis line{
+		fill: none;
+		stroke: #000;
+		shape-rendering: crispEdges;
+	}
+	.gridline path,
+	.gridline line{
+		fill: none;
+		stroke: #ccc;
+		shape-rendering: crispEdges;
+		opacity:.15;
+	}
+
+	.chart-header{
+		text-transform: capitalize;
+		font-size:125%;
+	}
+</style>
+<h1>EDUCATION AND EXPERIENCE</h1>
+
+<script  type="text/javascript" src="d3.min.js"></script>
+<script>
+
+var legend = ["Education", "Marketing","Technology", "Journalism", "Journalism/Tech"];
+var data = [
+	{key: "Boston University", role: "Bachelor of Arts, English", start: "2005/09/01", end: "2008/05/01", type:"Education", skills:"Writing, research"},
+	{key: "EBSCO Publishing", role: "Serials coordinator", start: "2008/11/01", end: "2010/02/01", type:"Technology", skills:"SQL, Visual Basic, Microsoft Access, Excel"},
+	{key: "Figment", role: "Community management intern", start: "2010/08/01", end: "2010/12/01", type:"Technology", skills:"Social media, SEO, HTML/CSS"},
+	{key:"W.W. Norton & Co.", role: "Editorial & marketing intern", start: "2011/01/01", end: "2011/05/01", type:"Marketing", skills:"Social media, HTML/CSS"},
+	{key: "BuyWithMe.com", role: "Copywriter", start: "2011/06/01", end: "2011/10/01", type:"Marketing", skills:"Writing"},
+	{key: "Freelance journalist", role: "Writer and photographer", start: "2011/10/01", end: "2017/02/01", type:"Journalism", skills:"Writing, reporting, photography"},
+	{key: "Macy's", role: "Copywriter", start: "2012/03/01", end: "2012/10/01", type:"Marketing", skills:"Writing, SEO"},
+	{key: "New York University", role: "Master of Arts, Journalism/Latin American studies", start: "2012/09/01", end: "2014/05/01", type:"Education", skills:"Reporting, R, ArcGIS, Carto, Python"},
+	{key: "NYU Journalism", role: "Graduate assistant", start: "2013/09/01", end: "2014/05/01", type:"Journalism/Tech", skills:"Editing, reporting"},
+	{key: "Daily Mail", role: "Reporter", start: "2014/07/01", end: "2015/08/01", type:"Journalism", skills:"Reporting, SEO"},
+	{key: "New York Times Co.", role: "Fact checker", start: "2015/01/01", end: "2015/06/01", type:"Journalism", skills:"Research, editing"},
+	{key: "Crain's New York", role: "Web producer", start: "2015/08/01", end: "2017/02/01", type:"Journalism/Tech", skills:"Javascript, Drupal, Carto, ArcGIS, Python, social media, SEO"}
+
+];
+var w = 1200;
+var h = 650;
+var margin = {
+	top: 58,
+	bottom: 100,
+	left: 40,
+	right: 40
+};
+var width = w - margin.left - margin.right;
+var height = h - margin.top - margin.bottom;
+
+var colorScale = d3.scale.ordinal()
+        .domain(legend)
+        .range(["#5c5663", "#C1B4AE", "#be8d4d", "#92140C", "#BE5A38"]);
+
+var legendScale = d3.scale.ordinal()
+					.domain(legend.map(function(entry){
+					return entry;
+				}))
+		.rangeBands([0, 60])
+
+var svg = d3.select("body").append("svg")
+			.attr("id", "chart")
+			.attr("width", w)
+			.attr("height", h);
+var chart = svg.append("g")
+			.classed("display", true)
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+var dateParser = d3.time.format("%Y/%m/%d").parse;
+
+var x = d3.time.scale()
+		.domain([d3.min(data, function(d){
+			var date = dateParser(d.start);
+			var yearBefore = d3.time.day.offset(date, -20)
+			return yearBefore;
+		}),d3.max(data, function(d){
+			var date2 = dateParser(d.end);
+			
+			return date2;
+		})])
+		.range([0,width]);
+var y = d3.scale.ordinal()
+		.domain(data.map(function(entry){
+			return entry.key;
+		}))
+		.rangeBands([0, height]);
+var xAxis = d3.svg.axis()
+			.scale(x)
+			.orient("bottom");
+var xGridlines = d3.svg.axis()
+			.scale(x)
+			.tickSize(-height,-height)
+			.tickFormat("")
+			.orient("bottom");
+var yAxis = d3.svg.axis()
+			.scale(y)
+			.orient("left")
+			.ticks(5)
+			.tickSize(0)
+			.tickValues("");
+function leyenda(params){
+	if(params.initialize){
+		this.append("g")
+			.classed("gridline x", true)
+			.attr("transform", "translate(0," + height + ")")
+			.call(params.axis.gridlines.x);
+		this.selectAll(".leg")
+			.data(params.legend)
+			.enter()
+				.append("rect")
+				.classed("leg", true)
+				.attr("transform", "translate("+(width - 220)+","+-20+")")
+				.style("fill", function(d,i){
+					return colorScale(legend[i]);
+				})
+				.attr("x", 5)
+				.attr("y", function(d, i){
+					return i*(legendScale.rangeBand()+10)
+				})
+				.attr("height", 19)
+				.attr("width", 200);
+		this.selectAll(".legend-label")
+			.data(params.legend)
+			.enter()
+				.append("text")
+				.classed("legend-label", true)
+				.attr("transform", "translate("+(width - 220)+","+-20+")")
+				.attr("x", 13)
+				.attr("y", function(d, i){
+					return i*(legendScale.rangeBand()+10)+ 15
+				})
+				.text(function(d,i){
+					return legend[i]
+				})
+		}
+
+		this.append("g")
+			.append("text")
+			.classed("job1", true)
+			.attr("transform", "translate("+60+","+(height-142)+")")
+			.text("");
+		this.append("g")
+			.append("text")
+			.classed("job2", true)
+			.attr("transform", "translate("+60+","+(height-120)+")")
+			.text("");
+		this.append("g")
+			.append("text")
+			.classed("job3", true)
+			.attr("transform", "translate("+60+","+(height-100)+")")
+			.text("");
+}
+function plot(params){
+	leyenda.call(this, params);
+	var self = this;
+	var talents = d3.keys(params.data[0]).filter(function(d){
+		return d !== "start" && d !== "end";
+	});
+	this.append("g")
+		.classed("x axis", true)
+		.attr("transform", "translate(0," + height + ")")
+		.call(params.axis.x);
+	this.append("g")
+		.classed("y axis", true)
+		.attr("transform", "translate(0,0)")
+		.call(params.axis.y);
+	//enter()
+	this.selectAll(".bar")
+		.data(params.data)
+		.enter()
+			.append("rect")
+			.classed("bar", true)
+			.style("opacity", .9)
+			.attr("x", function(d){
+				var date = dateParser(d.start);
+				return x(date);
+			})
+			.attr("y", function(d,i){
+				return i*(y.rangeBand());
+			})
+			.attr("height", function(d,i){
+				return y.rangeBand()-3;
+			})
+			.attr("width", function(d){
+				var date1 = dateParser(d.start);
+				var date2 = dateParser(d.end);
+				var diff = x(date2) - x(date1);
+				return diff
+			})
+			;
+	//update
+	this.selectAll(".bar")
+		.attr("cx", function(d){
+			var date = dateParser(d.start);
+			return x(date);
+		})
+		.attr("cy", 2);
+	this.selectAll(".bar")
+		.style("fill", function(d,i){
+			return colorScale(d.type);
+		})
+		.on("mouseover", function(d,i){
+			var str = d.key + " &nbsp; ";
+				str += "Role: " + d.role + " ";
+				str += "Type: " + d.type + " ";
+
+			d3.select(this)
+				.transition()
+				.style("opacity",.45);
+			d3.select(".job1").text(d.key);
+			d3.select(".job2").text(d.role);
+			d3.select(".job3").text("Skill set: " + d.skills + " ");
+		})
+		.on("mouseout", function(d,i){
+			d3.select(this)
+				.transition()
+				.style("opacity",.9);
+			d3.select(".job1").text(" ")
+			d3.select(".job2").text(" ")
+			d3.select(".job3").text(" ")
+		});
+
+
+	//exit()
+	this.selectAll(".bar")
+		.data(params.data)
+		.exit()
+		.remove();
+
+}
+plot.call(chart, {
+	data: data,
+	legend:legend,
+	axis: {
+		x: xAxis,
+		y: yAxis,
+		gridlines: {
+			x:xGridlines
+		}
+	},
+	initialize:true
+});
+
+</script>
